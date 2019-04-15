@@ -1,0 +1,76 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="Selenified Ant Sample" basedir="." default="selenified">
+    <property name="rootdir" value="./"/>
+    <property name="lib-dir" value="./lib"/>
+    <property name="test-dir" value="./src"/>
+    <property name="out-dir" value="./target"/>
+    <property name="com-dir" value="${out-dir}/classes"/>
+    <condition property="threads" else="5">
+        <isset property="threads"/>
+    </condition>
+    <condition property="verbosity" else="3">
+        <isset property="verbosity"/>
+    </condition>
+    <path id="classpath">
+        <fileset dir="${lib-dir}" includes="**/*.jar"/>
+        <pathelement location="${lib-dir}"/>
+        <pathelement location="${com-dir}"/>
+    </path>
+
+    <target name="clean">
+        <delete dir="${out-dir}"/>
+        <delete dir="${lib-dir}"/>
+    </target>
+
+    <target name="resolve">
+        <ivy:retrieve pathid="classpath">
+            <dependency org="com.coveros" name="selenified" rev="3.1.0" />
+        </ivy:retrieve>
+    </target>
+
+    <target name="classpath" depends="resolve">
+        <path id="classpath">
+            <fileset dir="${lib-dir}" includes="**/*.jar"/>
+            <pathelement location="${com-dir}"/>
+        </path>
+    </target>
+
+    <target name="compile" depends="classpath">
+        <mkdir dir="${com-dir}"/>
+        <javac srcdir="${test-dir}" destdir="${com-dir}" classpathref="classpath" includeantruntime="false"/>
+    </target>
+
+    <target name="selenified" depends="compile" description="Run integration tests in parallel">
+
+        <java classpathref="classpath" classname="org.testng.TestNG" failonerror="true">
+            <sysproperty key="hub" value="${hub}" if:set="hub"/>
+            <sysproperty key="proxy" value="${proxy}" if:set="proxy"/>
+            <sysproperty key="appURL" value="${appURL}" if:set="appURL"/>
+            <sysproperty key="browser" value="${browser}" if:set="browser"/>
+            <sysproperty key="headless" value="${headless}" if:set="headless"/>
+            <sysproperty key="options" value="${options}" if:set="options"/>
+            <sysproperty key="defaultWait" value="${defaultWait}" if:set="defaultWait"/>
+            <sysproperty key="generatePDF" value="${generatePDF}" if:set="generatePDF"/>
+            <sysproperty key="packageResults" value="${packageResults}" if:set="packageResults"/>
+            <arg value="-d"/>
+            <arg value="${out-dir}"/>
+            <arg value="-suitename"/>
+            <arg value="Selenified Ant Example"/>
+            <arg value="-parallel"/>
+            <arg value="methods"/>
+            <arg value="-threadcount"/>
+            <arg value="${threads}"/>
+            <arg value="-dataproviderthreadcount"/>
+            <arg value="${threads}"/>
+            <arg value="-verbose"/>
+            <arg value="${verbosity}"/>
+            <arg value="-listener"/>
+            <arg value="com.coveros.selenified.utilities.Transformer"/>
+            <arg value="-groups" if:set="groups.include"/>
+            <arg value="${groups.include}" if:set="groups.include"/>
+            <arg value="-excludegroups" if:set="groups.exclude"/>
+            <arg value="${groups.exclude}" if:set="groups.exclude"/>
+            <arg value="-testclass"/>
+            <arg value="ReadmeSampleIT"/>
+        </java>
+    </target>
+</project>
